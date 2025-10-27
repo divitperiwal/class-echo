@@ -19,7 +19,7 @@ export default function RootLayout({
           
           {/* Content area */}
           <div className="relative">
-            <div className="container mx-auto p-8">
+            <div className="container">
               {children}
             </div>
           </div>
