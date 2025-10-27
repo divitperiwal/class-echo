@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
@@ -144,11 +145,23 @@ export default function LoginPage() {
         />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_50%,transparent_0%,#000_70%)]" />
         
-        {/* Decorative circles */}
+        {/* Decorative circles with Framer Motion float animation */}
         <div className="absolute inset-0">
-          <div className="absolute top-[20%] left-[20%] w-32 h-32 rounded-full border border-amber-200/20 animate-float" />
-          <div className="absolute bottom-[20%] right-[20%] w-40 h-40 rounded-full border border-amber-200/10 animate-float" style={{ animationDelay: '-2s' }} />
-          <div className="absolute top-[50%] left-[50%] w-48 h-48 rounded-full border border-amber-200/5 animate-float" style={{ animationDelay: '-4s' }} />
+          <motion.div
+            className="absolute top-[20%] left-[20%] w-32 h-32 rounded-full border border-amber-200/20"
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 6, ease: "easeInOut", repeat: Infinity }}
+          />
+          <motion.div
+            className="absolute bottom-[20%] right-[20%] w-40 h-40 rounded-full border border-amber-200/10"
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 6, ease: "easeInOut", repeat: Infinity, delay: 2 }}
+          />
+          <motion.div
+            className="absolute top-[50%] left-[50%] w-48 h-48 rounded-full border border-amber-200/5"
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 6, ease: "easeInOut", repeat: Infinity, delay: 4 }}
+          />
         </div>
 
         <div className="h-full flex flex-col relative">
@@ -160,6 +173,7 @@ export default function LoginPage() {
           
           <div className="absolute bottom-20 right-10">
             <div className="relative w-150 h-7 mb-3">
+              {/* Feature text with Framer Motion fade animation */}
               {[
                 "Modernize classrooms",
                 "Secure attendance tracking",
@@ -168,16 +182,22 @@ export default function LoginPage() {
                 "Smart resource management",
                 "Seamless communication"
               ].map((text, index) => (
-                <p
+                <motion.p
                   key={text}
-                  data-index={index}
-                  className="feature-text text-2xl font-light text-white/90"
-                  style={{
-                    textShadow: '0 2px 8px rgba(0,0,0,0.5)'
+                  className="text-2xl font-light text-white/90"
+                  style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: [1, 0], y: [0, -10] }}
+                  transition={{
+                    duration: 18,
+                    ease: "easeOut",
+                    repeat: Infinity,
+                    repeatDelay: 0,
+                    delay: index * 3
                   }}
                 >
                   {text}
-                </p>
+                </motion.p>
               ))}
             </div>
             <div className="flex flex-col items-end gap-2">
