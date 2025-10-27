@@ -33,8 +33,8 @@ export default function AuthLayout({
 
         {/* Decorative elements */}
         <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-          <div className="absolute top-6 left-6 w-24 h-24 border border-white/[0.05] rounded-full" />
-          <div className="absolute bottom-6 right-6 w-32 h-32 border border-white/[0.05] rounded-full" />
+          <div className="absolute top-6 left-6 w-24 h-24 border rounded-full" />
+          <div className="absolute bottom-6 right-6 w-32 h-32 border rounded-full" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border border-white/[0.05] rounded-full" />
         </div>
       </div>
