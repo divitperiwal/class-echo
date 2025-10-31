@@ -116,19 +116,37 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html,
   body {
     @apply bg-background text-foreground;
+    height: 100%;
+    overflow: hidden;
+  }
+  #__next {
+    height: 100%;
   }
 }
 
-
-
-
+/* Custom scrollbar styling for better UX */
 ::-webkit-scrollbar {
-  display: none; /* For Chrome, Safari, and Opera */
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(115, 115, 115, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(115, 115, 115, 0.5);
 }
 
 * {
-  -ms-overflow-style: none;  /* For Internet Explorer and Edge */
-  scrollbar-width: none;     /* For Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(115, 115, 115, 0.3) transparent;
 }
