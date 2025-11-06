@@ -10,7 +10,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   Command,
   CommandDialog,
@@ -33,17 +32,44 @@ import {
   MessageSquare,
   Settings,
   Shield,
-  Command,
   LogOut,
   Calculator,
   FileText,
   Timer,
+  UserCircle,
 } from "lucide-react";
+import { useAuth } from "@/lib/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
 export function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const router = useRouter();
 
-  // Handle keyboard shortcut for search
+  const handleLogout = async () => {
+    await logout();
+  };
+
+  const handleProfileClick = () => {
+    if (user?.role === 'student') {
+      router.push('/student/profile');
+    } else if (user?.role === 'teacher') {
+      router.push('/teacher/profile');
+    }
+  };
+  
+  // Get user initials for avatar
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+
+  //Keywboard shortcut open/close search dialog
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || e.key === "/") {
@@ -55,36 +81,6 @@ export function Navbar() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const notifications = [
-    {
-      id: 1,
-      text: "New assignment posted in CSE101",
-      time: "5m ago",
-      icon: <BookOpen className="w-4 h-4 text-amber-200" />,
-      type: "Assignment",
-    },
-    {
-      id: 2,
-      text: "Your attendance was marked for today's classes",
-      time: "10m ago",
-      icon: <Calendar className="w-4 h-4 text-emerald-400" />,
-      type: "Attendance",
-    },
-    {
-      id: 3,
-      text: "Grade updated in MTH202: Linear Algebra",
-      time: "1h ago",
-      icon: <Shield className="w-4 h-4 text-blue-400" />,
-      type: "Grade",
-    },
-    {
-      id: 4,
-      text: "New message from Prof. Sarah in Discussion Forum",
-      time: "2h ago",
-      icon: <MessageSquare className="w-4 h-4 text-violet-400" />,
-      type: "Message",
-    },
-  ];
 
   const searchCategories = [
     {
@@ -168,17 +164,17 @@ export function Navbar() {
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-white/5 transition-colors group">
                   <Avatar className="w-9 h-9 border border-neutral-800 group-hover:border-neutral-700 transition-colors">
-                    <AvatarImage src="" />
+                    <AvatarImage src={user?.avatar || ""} />
                     <AvatarFallback className="bg-neutral-900 text-neutral-400">
-                      <User className="w-4 h-4" />
+                      {user?.name ? getInitials(user.name) : <User className="w-4 h-4" />}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col items-start">
                     <p className="text-sm font-medium text-white">
-                      Divit Periwal
+                      {user?.name || 'Guest'}
                     </p>
-                    <p className="text-xs text-neutral-400">
-                      Computer Science • Year 2
+                    <p className="text-xs text-neutral-400 capitalize">
+                      {user?.role || 'User'}
                     </p>
                   </div>
                 </button>
@@ -186,27 +182,33 @@ export function Navbar() {
               <DropdownMenuContent align="end" className="w-64">
                 <DropdownMenuLabel className="font-normal p-4">
                   <div className="flex flex-col space-y-1.5">
-                    <p className="text-base">Divit Periwal</p>
+                    <p className="text-base">{user?.name || 'Guest'}</p>
                     <p className="text-xs text-neutral-400">
-                      dp3300@srmist.edu.in
+                      {user?.email || 'No email'}
                     </p>
                     <Badge
                       variant="secondary"
-                      className="mt-2 w-fit text-[10px] font-medium bg-neutral-900"
+                      className="mt-2 w-fit text-[10px] font-medium bg-neutral-900 capitalize"
                     >
-                      Student ID: RA2411003012037
+                      {user?.role || 'User'}
                     </Badge>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="gap-2 p-2.5 px-4 focus:bg-neutral-900/50">
-                  <User className="w-4 h-4" /> Profile
+                <DropdownMenuItem 
+                  onClick={handleProfileClick}
+                  className="gap-2 p-2.5 px-4 focus:bg-neutral-900/50 cursor-pointer"
+                >
+                  <UserCircle className="w-4 h-4" /> View Profile
                 </DropdownMenuItem>
                 <DropdownMenuItem className="gap-2 p-2.5 px-4 focus:bg-neutral-900/50">
                   <Settings className="w-4 h-4" /> Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-400 hover:text-red-300 gap-2 p-2.5 px-4 focus:bg-red-950/20">
+                <DropdownMenuItem 
+                  onClick={handleLogout}
+                  className="text-red-400 hover:text-red-300 gap-2 p-2.5 px-4 focus:bg-red-950/20 cursor-pointer"
+                >
                   <LogOut className="w-4 h-4" /> Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>

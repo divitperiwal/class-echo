@@ -18,68 +18,62 @@ import {
   Users,
   CalendarCheck,
   BookOpen,
-  MessageSquare,
   Settings,
   LogOut,
   BellRing,
   Star,
 } from "lucide-react";
-
-const isTeacher = true;
-
-const mainNavItems = [
-  {
-    title: "Dashboard",
-    href: isTeacher ? "/teacher" : "/student",
-    icon: <LayoutDashboard className="w-5 h-5" />,
-    description: "Overview of your academic activities",
-  },
-  {
-    title: "Students",
-    href: isTeacher ? "/teacher/students" : "/student/students",
-    icon: <Users className="w-5 h-5" />,
-    badge: "150",
-    description: "Manage your student roster",
-  },
-  {
-    title: "Attendance",
-    href: isTeacher ? "/teacher/attendance" : "/student/attendance",
-    icon: <CalendarCheck className="w-5 h-5" />,
-    description: "Track and manage attendance",
-  },
-  {
-    title: "Courses",
-    href: isTeacher ? "/teacher/courses" : "/student/courses",
-    icon: <BookOpen className="w-5 h-5" />,
-    badge: "4",
-    description: "Your active courses and materials",
-  },
-  {
-    title: "Messages",
-    href: isTeacher ? "/teacher/messages" : "/student/messages",
-    icon: <MessageSquare className="w-5 h-5" />,
-    badge: "3",
-    isNew: true,
-    description: "Communication hub",
-  },
-];
-
-const bottomNavItems = [
-  {
-    title: "Settings",
-    href: "/settings",
-    icon: <Settings className="w-5 h-5" />,
-  },
-  {
-    title: "Logout",
-    href: "/login",
-    icon: <LogOut className="w-5 h-5" />,
-  },
-];
+import { useAuth } from "@/lib/contexts/AuthContext";
 
 export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const { user, logout } = useAuth();
+
+  // Determine role-based routes
+  const isTeacher = user?.role === 'teacher';
+  const rolePrefix = isTeacher ? '/teacher' : '/student';
+
+  const mainNavItems = [
+    {
+      title: "Dashboard",
+      href: rolePrefix,
+      icon: <LayoutDashboard className="w-5 h-5" />,
+      description: "Overview of your academic activities",
+    },
+    {
+      title: isTeacher ? "Students" : "My Courses",
+      href: `${rolePrefix}/${isTeacher ? 'students' : 'courses'}`,
+      icon: isTeacher ? <Users className="w-5 h-5" /> : <BookOpen className="w-5 h-5" />,
+      badge: isTeacher ? "150" : "4",
+      description: isTeacher ? "Manage your student roster" : "Your active courses and materials",
+    },
+    {
+      title: "Attendance",
+      href: `${rolePrefix}/attendance`,
+      icon: <CalendarCheck className="w-5 h-5" />,
+      description: "Track and manage attendance",
+    },
+    {
+      title: isTeacher ? "Courses" : "Grades",
+      href: `${rolePrefix}/${isTeacher ? 'courses' : 'grades'}`,
+      icon: <BookOpen className="w-5 h-5" />,
+      badge: isTeacher ? "3" : undefined,
+      description: isTeacher ? "Your teaching courses" : "View your grades and performance",
+    },
+  ];
+
+  const bottomNavItems = [
+    {
+      title: "Settings",
+      href: "/settings",
+      icon: <Settings className="w-5 h-5" />,
+    },
+  ];
+
+  const handleLogout = async () => {
+    await logout();
+  };
 
   if (collapsed) {
     return (
@@ -220,7 +214,6 @@ export function Sidebar() {
             ))}
           </nav>
         </ScrollArea>
-        {/* ...existing code... */}
         <div className="px-2 pt-2">
           <Separator className="my-4 bg-neutral-800" />
           {bottomNavItems.map((item) => (
@@ -242,10 +235,26 @@ export function Sidebar() {
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right" className="z-100">
-                <p>{item.description || `Go to ${item.title.toLowerCase()}`}</p>
+                <p>Go to {item.title.toLowerCase()}</p>
               </TooltipContent>
             </Tooltip>
           ))}
+          
+          {/* Logout Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 text-neutral-400 hover:text-white hover:bg-white/5"
+              >
+                <LogOut className="w-5 h-5" />
+                Logout
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="z-100">
+              <p>Sign out of your account</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </motion.div>
     </TooltipProvider>

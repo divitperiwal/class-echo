@@ -6,11 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { register } from "@/lib/auth";
+import { useAuth } from "@/lib/contexts/AuthContext";
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const { refreshUser } = useAuth();
   const [formData, setFormData] = useState({
-    userId: "",
+    name: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -28,14 +32,33 @@ export default function RegisterPage() {
         throw new Error("Passwords do not match");
       }
 
-      // TODO: Implement your registration logic here
-      console.log("Registration attempt:", formData);
+      if (formData.password.length < 6) {
+        throw new Error("Password must be at least 6 characters");
+      }
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const authData = await register(
+        formData.email, 
+        formData.password, 
+        formData.name,
+        'STUDENT' // Default role, can be changed later
+      );
 
-      // Replace with actual registration
-      alert("Registration successful! (Demo)");
+      // Manually update auth context with the user data we already have
+      // This avoids the race condition of calling refreshUser() immediately
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Redirect based on user role - the route will pick up cached user data
+      const role = authData.user.role.toLowerCase();
+      if (role === 'student') {
+        await router.push('/student');
+      } else if (role === 'teacher') {
+        await router.push('/teacher');
+      } else {
+        await router.push('/');
+      }
+      
+      // Force a page refresh to ensure AuthContext picks up the new data
+      window.location.reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
@@ -66,23 +89,22 @@ export default function RegisterPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* User ID Input */}
             <div className="relative">
               <label
-                htmlFor="userId"
+                htmlFor="name"
                 className="text-xs text-neutral-400 absolute -top-2 left-3 px-2 bg-black rounded-full"
               >
-                User ID
+                Full Name
               </label>
               <Input
-                id="userId"
+                id="name"
                 type="text"
-                value={formData.userId}
+                value={formData.name}
                 onChange={handleChange}
                 required
                 disabled={isLoading}
                 className="h-14 px-6 bg-neutral-950/50 border-neutral-800 rounded-2xl text-white placeholder:text-neutral-600 focus:border-amber-300/50 focus:ring-amber-300/20 transition-all"
-                placeholder="Choose your user ID"
+                placeholder="Enter your full name"
               />
             </div>
 
@@ -223,7 +245,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="absolute bottom-20 right-10 ">
-            <div className="relative w-150 h-7 mb-3 ">
+            <div className="relative w-150 h-10 mb-3 ">
               {/* Feature text with Framer Motion fade animation */}
               {[
                 "Modernize classrooms",
@@ -235,15 +257,18 @@ export default function RegisterPage() {
               ].map((text, index) => (
                 <motion.p
                   key={text}
-                  className="text-2xl font-light text-white/90"
+                  className="text-xl font-light text-white/90"
                   style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: [1, 0], y: [0, -10] }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ 
+                    opacity: [0, 1, 1, 0],
+                    y: [10, 0, 0, -10]
+                  }}
                   transition={{
-                    duration: 18,
-                    ease: "easeOut",
+                    duration: 3,
+                    times: [0, 0.1, 0.9, 1],
                     repeat: Infinity,
-                    repeatDelay: 0,
+                    repeatDelay: 15,
                     delay: index * 3
                   }}
                 >

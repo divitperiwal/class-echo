@@ -1,15 +1,19 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { delay, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { login } from "@/lib/auth";
+import { useAuth } from "@/lib/contexts/AuthContext";
 
 export default function LoginPage() {
-  const [userId, setUserId] = useState("");
+  const router = useRouter();
+  const { refreshUser } = useAuth();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -20,13 +24,23 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // TODO: Implement your authentication logic here
-      console.log("Login attempt:", { userId, password });
+      const authData = await login(email, password);
+    
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Replace with actual authentication
-      alert("Login successful! (Demo)");
+      const role = authData.user.role.toLowerCase();
+      
+      if (role === 'student') {
+        await router.push('/student');
+      } else if (role === 'teacher') {
+        await router.push('/teacher');
+      } else {
+        await router.push('/');
+      }
+      
+      window.location.reload();
     } catch (err) {
-      setError("Invalid credentials");
+      setError(err instanceof Error ? err.message : "Invalid credentials");
     } finally {
       setIsLoading(false);
     }
@@ -51,20 +65,20 @@ export default function LoginPage() {
             {/* User ID Input */}
             <div className="relative">
               <label 
-                htmlFor="userId" 
+                htmlFor="email" 
                 className="text-xs text-neutral-400 absolute -top-2 left-3 px-2 bg-black rounded-full"
               >
-                User ID
+                Email ID
               </label>
               <Input
-                id="userId"
-                type="text"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
                 className="h-14 px-6 bg-neutral-950/50 border-neutral-800 rounded-2xl text-white placeholder:text-neutral-600 focus:border-amber-300/50 focus:ring-amber-300/20 transition-all"
-                placeholder="Enter your user ID"
+                placeholder="Enter your email ID"
               />
             </div>
 
@@ -172,7 +186,7 @@ export default function LoginPage() {
           </div>
           
           <div className="absolute bottom-20 right-10">
-            <div className="relative w-150 h-7 mb-3">
+            <div className="relative w-150 h-10 mb-3">
               {/* Feature text with Framer Motion fade animation */}
               {[
                 "Modernize classrooms",
@@ -184,15 +198,18 @@ export default function LoginPage() {
               ].map((text, index) => (
                 <motion.p
                   key={text}
-                  className="text-2xl font-light text-white/90"
+                  className="text-xl font-light text-white/90"
                   style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: [1, 0], y: [0, -10] }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ 
+                    opacity: [0, 1, 1, 0],
+                    y: [10, 0, 0, -10]
+                  }}
                   transition={{
-                    duration: 18,
-                    ease: "easeOut",
+                    duration: 3,
+                    times: [0, 0.1, 0.9, 1],
                     repeat: Infinity,
-                    repeatDelay: 0,
+                    repeatDelay: 15,
                     delay: index * 3
                   }}
                 >

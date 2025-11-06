@@ -22,307 +22,143 @@ import {
   Upload,
   Plus,
   Edit,
+  RefreshCw,
 } from "lucide-react";
+import { useTeacherStore } from "@/lib/store/useTeacherStore";
 
-interface Course {
+interface CourseWithStats {
   id: string;
   code: string;
   name: string;
   credits: number;
+  semester: string;
+  description?: string;
+  totalStudents: number;
   sections: {
     name: string;
     students: number;
-    schedule: string;
   }[];
-  totalStudents: number;
-  schedule: {
-    days: string[];
-    time: string;
-  };
-  semester: string;
   performance: {
     averageGrade: number;
     passRate: number;
     averageAttendance: number;
   };
-  upcomingClasses: {
-    section: string;
-    date: string;
-    time: string;
-    topic: string;
-  }[];
-  assignments: {
-    total: number;
-    pending: number;
-    graded: number;
-  };
   materials: {
-    lectures: number;
-    notes: number;
-    assignments: number;
+    total: number;
   };
-  syllabus: {
-    completed: string[];
-    upcoming: string[];
-  };
-  recentActivity: {
-    type: string;
-    description: string;
-    time: string;
-  }[];
-  gradeDistribution: {
-    grade: string;
-    count: number;
-    percentage: number;
-  }[];
+  enrollments: number;
 }
 
 const TeachersCourses = () => {
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<CourseWithStats | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  
+  const {
+    courses,
+    enrollments,
+    grades,
+    materials,
+    fetchCourses,
+    fetchEnrollments,
+    fetchGrades,
+    fetchAllMaterials,
+  } = useTeacherStore();
 
-  // Mock data - Courses
-  const courses: Course[] = [
-    {
-      id: "1",
-      code: "MATH301",
-      name: "Advanced Mathematics",
-      credits: 4,
-      sections: [
-        { name: "Class 10-A", students: 45, schedule: "Mon, Wed, Fri - 09:00 AM" },
-        { name: "Class 10-B", students: 42, schedule: "Tue, Thu - 11:00 AM" },
-      ],
-      totalStudents: 87,
-      schedule: {
-        days: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-        time: "09:00 AM - 12:00 PM",
-      },
-      semester: "Fall 2025",
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchCourses();
+      await Promise.all([
+        fetchEnrollments(),
+        fetchGrades(),
+        fetchAllMaterials(),
+      ]);
+    } catch (error) {
+      console.error("Error refreshing courses data:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Calculate course statistics
+  const coursesWithStats: CourseWithStats[] = courses.map((course) => {
+    // Get enrollments for this course
+    const courseEnrollments = enrollments.filter(
+      (e) => e.course?.id === course.id
+    );
+
+    // Get grades for this course
+    const courseGrades = grades.filter((g) => g.course?.id === course.id);
+
+    // Get materials for this course
+    const courseMaterials = materials.filter(
+      (m) => m.course?.id === course.id
+    );
+
+    // Group enrollments by section
+    const sectionMap = new Map<string, number>();
+    courseEnrollments.forEach((enrollment) => {
+      const section = enrollment.section || "Default";
+      sectionMap.set(section, (sectionMap.get(section) || 0) + 1);
+    });
+
+    const sections = Array.from(sectionMap.entries()).map(([name, students]) => ({
+      name,
+      students,
+    }));
+
+    // Calculate average grade
+    const averageGrade =
+      courseGrades.length > 0
+        ? courseGrades.reduce((sum, g) => {
+            if (g.maxScore && g.maxScore > 0) {
+              return sum + (g.score / g.maxScore) * 100;
+            }
+            return sum;
+          }, 0) / courseGrades.length
+        : 0;
+
+    // Calculate pass rate (assuming 40% is passing)
+    const passingGrades = courseGrades.filter((g) => {
+      if (g.maxScore && g.maxScore > 0) {
+        return (g.score / g.maxScore) * 100 >= 40;
+      }
+      return false;
+    });
+    const passRate =
+      courseGrades.length > 0
+        ? (passingGrades.length / courseGrades.length) * 100
+        : 0;
+
+    // Calculate average attendance from enrollments
+    const averageAttendance =
+      courseEnrollments.length > 0
+        ? courseEnrollments.reduce(
+            (sum, e) => sum + (e.attendancePercentage || 0),
+            0
+          ) / courseEnrollments.length
+        : 0;
+
+    return {
+      id: course.id,
+      code: course.code,
+      name: course.name,
+      credits: course.credits,
+      semester: course.semester,
+      description: course.description,
+      totalStudents: courseEnrollments.length,
+      sections,
       performance: {
-        averageGrade: 85.5,
-        passRate: 94.2,
-        averageAttendance: 92.8,
-      },
-      upcomingClasses: [
-        {
-          section: "Class 10-A",
-          date: "Tomorrow",
-          time: "09:00 AM",
-          topic: "Differential Equations",
-        },
-        {
-          section: "Class 10-B",
-          date: "Nov 1, 2025",
-          time: "11:00 AM",
-          topic: "Linear Algebra Review",
-        },
-      ],
-      assignments: {
-        total: 24,
-        pending: 8,
-        graded: 16,
+        averageGrade: Math.round(averageGrade * 10) / 10,
+        passRate: Math.round(passRate * 10) / 10,
+        averageAttendance: Math.round(averageAttendance * 10) / 10,
       },
       materials: {
-        lectures: 32,
-        notes: 28,
-        assignments: 24,
+        total: courseMaterials.length,
       },
-      syllabus: {
-        completed: [
-          "Calculus Fundamentals",
-          "Integration Techniques",
-          "Series and Sequences",
-          "Vector Calculus",
-        ],
-        upcoming: [
-          "Differential Equations",
-          "Fourier Analysis",
-          "Complex Analysis",
-        ],
-      },
-      recentActivity: [
-        {
-          type: "assignment",
-          description: "Assignment 5 submitted by 38 students",
-          time: "2 hours ago",
-        },
-        {
-          type: "material",
-          description: "Uploaded lecture notes for Chapter 7",
-          time: "5 hours ago",
-        },
-        {
-          type: "grade",
-          description: "Graded midterm exams for Class 10-A",
-          time: "1 day ago",
-        },
-      ],
-      gradeDistribution: [
-        { grade: "A+", count: 12, percentage: 13.8 },
-        { grade: "A", count: 24, percentage: 27.6 },
-        { grade: "A-", count: 18, percentage: 20.7 },
-        { grade: "B+", count: 15, percentage: 17.2 },
-        { grade: "B", count: 10, percentage: 11.5 },
-        { grade: "B-", count: 8, percentage: 9.2 },
-      ],
-    },
-    {
-      id: "2",
-      code: "MATH401",
-      name: "Calculus & Analytics",
-      credits: 4,
-      sections: [
-        { name: "Class 11-A", students: 38, schedule: "Mon, Wed - 02:00 PM" },
-        { name: "Class 11-B", students: 40, schedule: "Tue, Thu - 03:00 PM" },
-      ],
-      totalStudents: 78,
-      schedule: {
-        days: ["Mon", "Tue", "Wed", "Thu"],
-        time: "02:00 PM - 05:00 PM",
-      },
-      semester: "Fall 2025",
-      performance: {
-        averageGrade: 82.3,
-        passRate: 91.0,
-        averageAttendance: 89.5,
-      },
-      upcomingClasses: [
-        {
-          section: "Class 11-A",
-          date: "Tomorrow",
-          time: "02:00 PM",
-          topic: "Multivariable Calculus",
-        },
-        {
-          section: "Class 11-B",
-          date: "Nov 1, 2025",
-          time: "03:00 PM",
-          topic: "Optimization Problems",
-        },
-      ],
-      assignments: {
-        total: 20,
-        pending: 12,
-        graded: 8,
-      },
-      materials: {
-        lectures: 28,
-        notes: 24,
-        assignments: 20,
-      },
-      syllabus: {
-        completed: [
-          "Limits and Continuity",
-          "Derivatives",
-          "Integration",
-        ],
-        upcoming: [
-          "Multivariable Calculus",
-          "Optimization",
-          "Advanced Integration",
-        ],
-      },
-      recentActivity: [
-        {
-          type: "quiz",
-          description: "Quiz 3 completed by Class 11-A",
-          time: "3 hours ago",
-        },
-        {
-          type: "material",
-          description: "Added video lecture on optimization",
-          time: "1 day ago",
-        },
-        {
-          type: "announcement",
-          description: "Posted exam schedule for midterms",
-          time: "2 days ago",
-        },
-      ],
-      gradeDistribution: [
-        { grade: "A+", count: 8, percentage: 10.3 },
-        { grade: "A", count: 20, percentage: 25.6 },
-        { grade: "A-", count: 16, percentage: 20.5 },
-        { grade: "B+", count: 14, percentage: 17.9 },
-        { grade: "B", count: 12, percentage: 15.4 },
-        { grade: "B-", count: 8, percentage: 10.3 },
-      ],
-    },
-    {
-      id: "3",
-      code: "MATH501",
-      name: "Mathematical Statistics",
-      credits: 3,
-      sections: [
-        { name: "Class 12-A", students: 35, schedule: "Mon, Thu - 10:00 AM" },
-      ],
-      totalStudents: 35,
-      schedule: {
-        days: ["Mon", "Thu"],
-        time: "10:00 AM - 12:00 PM",
-      },
-      semester: "Fall 2025",
-      performance: {
-        averageGrade: 88.2,
-        passRate: 97.1,
-        averageAttendance: 95.2,
-      },
-      upcomingClasses: [
-        {
-          section: "Class 12-A",
-          date: "Nov 4, 2025",
-          time: "10:00 AM",
-          topic: "Hypothesis Testing",
-        },
-      ],
-      assignments: {
-        total: 15,
-        pending: 5,
-        graded: 10,
-      },
-      materials: {
-        lectures: 20,
-        notes: 18,
-        assignments: 15,
-      },
-      syllabus: {
-        completed: [
-          "Probability Theory",
-          "Distributions",
-          "Statistical Inference",
-        ],
-        upcoming: [
-          "Hypothesis Testing",
-          "Regression Analysis",
-          "Time Series",
-        ],
-      },
-      recentActivity: [
-        {
-          type: "assignment",
-          description: "Assignment 4 graded for all students",
-          time: "1 hour ago",
-        },
-        {
-          type: "material",
-          description: "Uploaded practice problems",
-          time: "4 hours ago",
-        },
-        {
-          type: "grade",
-          description: "Updated gradebook with quiz scores",
-          time: "2 days ago",
-        },
-      ],
-      gradeDistribution: [
-        { grade: "A+", count: 10, percentage: 28.6 },
-        { grade: "A", count: 12, percentage: 34.3 },
-        { grade: "A-", count: 8, percentage: 22.9 },
-        { grade: "B+", count: 3, percentage: 8.6 },
-        { grade: "B", count: 2, percentage: 5.7 },
-        { grade: "B-", count: 0, percentage: 0 },
-      ],
-    },
-  ];
+      enrollments: courseEnrollments.length,
+    };
+  });
 
   return (
     <div className="h-full bg-black flex flex-col overflow-hidden">
@@ -335,10 +171,19 @@ const TeachersCourses = () => {
               My <span className="font-medium text-amber-200">Courses</span>
             </h1>
             <p className="text-neutral-500 text-xs mt-1">
-              {courses.length} courses • {courses.reduce((acc, c) => acc + c.totalStudents, 0)} total students
+              {coursesWithStats.length} courses • {coursesWithStats.reduce((acc, c) => acc + c.totalStudents, 0)} total students
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <Button 
+              onClick={handleRefresh}
+              disabled={refreshing}
+              variant="outline"
+              className="h-10 border-neutral-800 text-neutral-400 hover:text-white hover:border-amber-200/50"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
             <Button className="h-10 bg-amber-200 hover:bg-amber-300 text-black font-medium">
               <Plus className="w-4 h-4 mr-2" />
               Add Course Material
@@ -358,7 +203,16 @@ const TeachersCourses = () => {
             </div>
             <ScrollArea className="flex-1 min-h-0">
               <div className="p-6 space-y-3">
-                {courses.map((course, idx) => (
+                {coursesWithStats.length === 0 ? (
+                  <div className="text-center py-12">
+                    <BookOpen className="w-16 h-16 text-neutral-700 mx-auto mb-4" />
+                    <p className="text-neutral-400">No courses found</p>
+                    <p className="text-neutral-600 text-sm mt-1">
+                      Courses you teach will appear here
+                    </p>
+                  </div>
+                ) : (
+                  coursesWithStats.map((course, idx) => (
                   <motion.div
                     key={course.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -392,38 +246,53 @@ const TeachersCourses = () => {
 
                       {/* Sections */}
                       <div className="mb-3 space-y-1.5">
-                        {course.sections.map((section, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-xs">
-                            <span className="text-neutral-500">{section.name}</span>
-                            <Badge className="bg-neutral-900/50 text-neutral-400 text-xs">
-                              {section.students} students
-                            </Badge>
+                        {course.sections.length > 0 ? (
+                          course.sections.map((section, idx) => (
+                            <div key={idx} className="flex items-center justify-between text-xs">
+                              <span className="text-neutral-500">{section.name}</span>
+                              <Badge className="bg-neutral-900/50 text-neutral-400 text-xs">
+                                {section.students} students
+                              </Badge>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-xs text-neutral-600">
+                            No sections
                           </div>
-                        ))}
+                        )}
                       </div>
 
                       {/* Quick Stats */}
                       <div className="grid grid-cols-2 gap-3 text-xs pt-3 border-t border-neutral-800/50">
                         <div>
                           <p className="text-neutral-500 mb-1">Avg Grade</p>
-                          <p className="text-white font-semibold">{course.performance.averageGrade}%</p>
+                          <p className="text-white font-semibold">
+                            {course.performance.averageGrade > 0 
+                              ? `${course.performance.averageGrade}%`
+                              : 'N/A'}
+                          </p>
                         </div>
                         <div>
                           <p className="text-neutral-500 mb-1">Attendance</p>
-                          <p className="text-white font-semibold">{course.performance.averageAttendance}%</p>
+                          <p className="text-white font-semibold">
+                            {course.performance.averageAttendance > 0
+                              ? `${course.performance.averageAttendance}%`
+                              : 'N/A'}
+                          </p>
                         </div>
                       </div>
 
-                      {/* Pending Assignments Alert */}
-                      {course.assignments.pending > 0 && (
-                        <div className="mt-3 flex items-center gap-2 text-xs text-amber-200">
-                          <AlertCircle className="w-3.5 h-3.5" />
-                          <span>{course.assignments.pending} assignments to grade</span>
+                      {/* Materials Count */}
+                      {course.materials.total > 0 && (
+                        <div className="mt-3 flex items-center gap-2 text-xs text-blue-400">
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>{course.materials.total} materials uploaded</span>
                         </div>
                       )}
                     </Card>
                   </motion.div>
-                ))}
+                ))
+                )}
               </div>
             </ScrollArea>
           </Card>
@@ -519,228 +388,120 @@ const TeachersCourses = () => {
                   {/* Scrollable Content */}
                   <ScrollArea className="flex-1 min-h-0">
                     <div className="p-6 space-y-6">
-                      {/* Upcoming Classes */}
-                      <Card className="p-5 bg-black/40 border-neutral-800/50">
-                        <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                          <Calendar className="w-5 h-5 text-amber-200" />
-                          Upcoming Classes
-                        </h3>
-                        <div className="space-y-3">
-                          {selectedCourse.upcomingClasses.map((cls, idx) => (
-                            <div
-                              key={idx}
-                              className="flex items-center justify-between p-4 bg-neutral-900/50 border border-neutral-800/50 rounded-lg"
-                            >
-                              <div>
-                                <p className="text-white font-medium text-sm mb-1">
-                                  {cls.topic}
-                                </p>
-                                <div className="flex items-center gap-3 text-xs text-neutral-500">
-                                  <span>{cls.section}</span>
-                                  <span>•</span>
-                                  <span className="flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />
-                                    {cls.date} at {cls.time}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </Card>
-
-                      {/* Assignments Status */}
-                      <Card className="p-5 bg-black/40 border-neutral-800/50">
-                        <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                          <FileText className="w-5 h-5 text-amber-200" />
-                          Assignments Overview
-                        </h3>
-                        <div className="grid grid-cols-3 gap-4">
-                          <div className="p-4 bg-neutral-900/50 border border-neutral-800/50 rounded-lg text-center">
-                            <p className="text-3xl font-bold text-white mb-1">
-                              {selectedCourse.assignments.total}
-                            </p>
-                            <p className="text-xs text-neutral-500">Total</p>
-                          </div>
-                          <div className="p-4 bg-amber-200/10 border border-amber-200/30 rounded-lg text-center">
-                            <p className="text-3xl font-bold text-amber-200 mb-1">
-                              {selectedCourse.assignments.pending}
-                            </p>
-                            <p className="text-xs text-neutral-500">Pending</p>
-                          </div>
-                          <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg text-center">
-                            <p className="text-3xl font-bold text-green-400 mb-1">
-                              {selectedCourse.assignments.graded}
-                            </p>
-                            <p className="text-xs text-neutral-500">Graded</p>
-                          </div>
-                        </div>
-                      </Card>
-
-                      <div className="grid grid-cols-2 gap-6">
-                        {/* Syllabus Progress */}
+                      {/* Course Description */}
+                      {selectedCourse.description && (
                         <Card className="p-5 bg-black/40 border-neutral-800/50">
-                          <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                            <Award className="w-5 h-5 text-amber-200" />
-                            Syllabus Progress
+                          <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+                            <FileText className="w-5 h-5 text-amber-200" />
+                            Course Description
                           </h3>
-                          <div className="space-y-4">
-                            <div>
-                              <p className="text-xs text-neutral-500 mb-2 font-medium">
-                                Completed Topics
-                              </p>
-                              <div className="space-y-2">
-                                {selectedCourse.syllabus.completed.map((topic, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="flex items-center gap-2 text-sm"
-                                  >
-                                    <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
-                                    <span className="text-neutral-400">{topic}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                            <div>
-                              <p className="text-xs text-neutral-500 mb-2 font-medium">
-                                Upcoming Topics
-                              </p>
-                              <div className="space-y-2">
-                                {selectedCourse.syllabus.upcoming.map((topic, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="flex items-center gap-2 text-sm"
-                                  >
-                                    <div className="w-4 h-4 rounded-full border-2 border-neutral-600 shrink-0" />
-                                    <span className="text-neutral-500">{topic}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
+                          <p className="text-neutral-400 text-sm leading-relaxed">
+                            {selectedCourse.description}
+                          </p>
                         </Card>
+                      )}
 
-                        {/* Course Materials */}
+                      {/* Sections Breakdown */}
+                      {selectedCourse.sections.length > 0 && (
                         <Card className="p-5 bg-black/40 border-neutral-800/50">
                           <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                            <Upload className="w-5 h-5 text-amber-200" />
-                            Course Materials
+                            <Users className="w-5 h-5 text-amber-200" />
+                            Sections ({selectedCourse.sections.length})
                           </h3>
                           <div className="space-y-3">
-                            <Card className="p-4 bg-neutral-900/50 border-neutral-800/50 hover:border-amber-200/30 transition-colors cursor-pointer">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
-                                    <Video className="w-5 h-5 text-red-400" />
-                                  </div>
+                            {selectedCourse.sections.map((section, idx) => (
+                              <Card 
+                                key={idx}
+                                className="p-4 bg-neutral-900/50 border-neutral-800/50"
+                              >
+                                <div className="flex items-center justify-between">
                                   <div>
-                                    <p className="text-sm text-white font-medium">
-                                      Video Lectures
+                                    <p className="text-white font-medium">{section.name}</p>
+                                    <p className="text-xs text-neutral-500 mt-1">
+                                      Active section
                                     </p>
-                                    <p className="text-xs text-neutral-500">Recorded sessions</p>
                                   </div>
+                                  <Badge className="bg-amber-200/20 text-amber-200 border-amber-200/30">
+                                    {section.students} students
+                                  </Badge>
                                 </div>
-                                <Badge className="bg-neutral-800 text-white">
-                                  {selectedCourse.materials.lectures}
-                                </Badge>
-                              </div>
-                            </Card>
-                            <Card className="p-4 bg-neutral-900/50 border-neutral-800/50 hover:border-amber-200/30 transition-colors cursor-pointer">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                                    <FileText className="w-5 h-5 text-blue-400" />
-                                  </div>
-                                  <div>
-                                    <p className="text-sm text-white font-medium">Study Notes</p>
-                                    <p className="text-xs text-neutral-500">PDF documents</p>
-                                  </div>
-                                </div>
-                                <Badge className="bg-neutral-800 text-white">
-                                  {selectedCourse.materials.notes}
-                                </Badge>
-                              </div>
-                            </Card>
-                            <Card className="p-4 bg-neutral-900/50 border-neutral-800/50 hover:border-amber-200/30 transition-colors cursor-pointer">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-lg bg-amber-200/20 flex items-center justify-center">
-                                    <FileText className="w-5 h-5 text-amber-200" />
-                                  </div>
-                                  <div>
-                                    <p className="text-sm text-white font-medium">Assignments</p>
-                                    <p className="text-xs text-neutral-500">Tasks & quizzes</p>
-                                  </div>
-                                </div>
-                                <Badge className="bg-neutral-800 text-white">
-                                  {selectedCourse.materials.assignments}
-                                </Badge>
-                              </div>
-                            </Card>
+                              </Card>
+                            ))}
                           </div>
                         </Card>
-                      </div>
+                      )}
 
-                      {/* Grade Distribution */}
+                      {/* Course Materials */}
                       <Card className="p-5 bg-black/40 border-neutral-800/50">
                         <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                          <BarChart3 className="w-5 h-5 text-amber-200" />
-                          Grade Distribution
+                          <Upload className="w-5 h-5 text-amber-200" />
+                          Course Materials
                         </h3>
-                        <div className="space-y-3">
-                          {selectedCourse.gradeDistribution.map((item, idx) => (
-                            <div key={idx}>
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-3">
-                                  <span className="text-sm font-semibold text-white w-8">
-                                    {item.grade}
-                                  </span>
-                                  <span className="text-xs text-neutral-500">
-                                    {item.count} students
-                                  </span>
-                                </div>
-                                <span className="text-sm text-white font-medium">
-                                  {item.percentage}%
-                                </span>
-                              </div>
-                              <div className="h-2 bg-neutral-800/50 rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full ${
-                                    item.grade.includes("+")
-                                      ? "bg-green-400"
-                                      : item.grade.includes("-")
-                                      ? "bg-amber-200"
-                                      : "bg-blue-400"
-                                  }`}
-                                  style={{ width: `${item.percentage}%` }}
-                                />
-                              </div>
-                            </div>
-                          ))}
+                        <Card className="p-6 bg-neutral-900/50 border-neutral-800/50 text-center">
+                          <FileText className="w-12 h-12 text-amber-200/50 mx-auto mb-3" />
+                          <p className="text-2xl font-bold text-white mb-1">
+                            {selectedCourse.materials.total}
+                          </p>
+                          <p className="text-sm text-neutral-500">
+                            Total materials uploaded
+                          </p>
+                        </Card>
+                      </Card>
+
+                      {/* Student Enrollments */}
+                      <Card className="p-5 bg-black/40 border-neutral-800/50">
+                        <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                          <Users className="w-5 h-5 text-amber-200" />
+                          Student Enrollments
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <Card className="p-4 bg-neutral-900/50 border-neutral-800/50 text-center">
+                            <p className="text-3xl font-bold text-white mb-1">
+                              {selectedCourse.totalStudents}
+                            </p>
+                            <p className="text-xs text-neutral-500">Total Students</p>
+                          </Card>
+                          <Card className="p-4 bg-amber-200/10 border border-amber-200/30 text-center">
+                            <p className="text-3xl font-bold text-amber-200 mb-1">
+                              {selectedCourse.enrollments}
+                            </p>
+                            <p className="text-xs text-neutral-500">Active Enrollments</p>
+                          </Card>
                         </div>
                       </Card>
 
-                      {/* Recent Activity */}
+                      {/* Quick Actions */}
                       <Card className="p-5 bg-black/40 border-neutral-800/50">
-                        <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                          <TrendingUp className="w-5 h-5 text-amber-200" />
-                          Recent Activity
-                        </h3>
-                        <div className="space-y-3">
-                          {selectedCourse.recentActivity.map((activity, idx) => (
-                            <div
-                              key={idx}
-                              className="flex items-start gap-3 p-3 bg-neutral-900/50 border border-neutral-800/50 rounded-lg"
-                            >
-                              <div className="w-2 h-2 rounded-full bg-amber-200 mt-2 shrink-0" />
-                              <div className="flex-1">
-                                <p className="text-sm text-white">{activity.description}</p>
-                                <p className="text-xs text-neutral-500 mt-1">
-                                  {activity.time}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
+                        <h3 className="text-white font-semibold mb-4">Quick Actions</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                          <Button 
+                            variant="outline"
+                            className="h-12 border-neutral-800 text-neutral-400 hover:text-white hover:border-amber-200/50 justify-start"
+                          >
+                            <Calendar className="w-4 h-4 mr-2" />
+                            View Schedule
+                          </Button>
+                          <Button 
+                            variant="outline"
+                            className="h-12 border-neutral-800 text-neutral-400 hover:text-white hover:border-amber-200/50 justify-start"
+                          >
+                            <BarChart3 className="w-4 h-4 mr-2" />
+                            View Analytics
+                          </Button>
+                          <Button 
+                            variant="outline"
+                            className="h-12 border-neutral-800 text-neutral-400 hover:text-white hover:border-amber-200/50 justify-start"
+                          >
+                            <Upload className="w-4 h-4 mr-2" />
+                            Upload Material
+                          </Button>
+                          <Button 
+                            variant="outline"
+                            className="h-12 border-neutral-800 text-neutral-400 hover:text-white hover:border-amber-200/50 justify-start"
+                          >
+                            <FileText className="w-4 h-4 mr-2" />
+                            Manage Grades
+                          </Button>
                         </div>
                       </Card>
                     </div>

@@ -1,855 +1,851 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   BookOpen,
-  User,
   Calendar,
-  Clock,
+  GraduationCap,
+  FileText,
   TrendingUp,
   Award,
-  FileText,
-  Video,
-  CheckCircle2,
-  Circle,
-  Mail,
-  MapPin,
-  GraduationCap,
-  BarChart3,
+  Download,
+  ExternalLink,
+  Clock,
+  CheckCircle,
   Target,
+  Sparkles,
+  BarChart3,
+  Activity,
 } from "lucide-react";
-
-interface Course {
-  id: string;
-  code: string;
-  name: string;
-  credits: number;
-  teacher: {
-    name: string;
-    email: string;
-    office: string;
-    avatar: string;
-  };
-  schedule: {
-    days: string[];
-    time: string;
-    room: string;
-  };
-  progress: {
-    completed: number;
-    total: number;
-    percentage: number;
-  };
-  grade: {
-    current: string;
-    percentage: number;
-  };
-  attendance: {
-    present: number;
-    total: number;
-    percentage: number;
-  };
-  nextClass: string;
-  assignments: {
-    pending: number;
-    upcoming: number;
-  };
-  syllabus: {
-    completed: string[];
-    upcoming: string[];
-  };
-  resources: {
-    lectures: number;
-    notes: number;
-    assignments: number;
-  };
-  performance: {
-    quizzes: number;
-    midterm: number;
-    assignments: number;
-  };
-}
+import { useStudentStore } from "@/lib/store/useStudentStore";
 
 const StudentsCourses = () => {
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const { courses, gpa, attendanceStats, courseAttendance, grades, materials } =
+    useStudentStore();
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
-  // Mock data - Courses
-  const courses: Course[] = [
-    {
-      id: "1",
-      code: "MATH301",
-      name: "Advanced Mathematics",
-      credits: 4,
-      teacher: {
-        name: "Prof. Priya Kumar",
-        email: "priya.kumar@srm.edu",
-        office: "Block A, Room 305",
-        avatar: "PK",
-      },
-      schedule: {
-        days: ["Mon", "Wed", "Fri"],
-        time: "09:00 AM - 10:30 AM",
-        room: "Room 201",
-      },
-      progress: {
-        completed: 28,
-        total: 45,
-        percentage: 62,
-      },
-      grade: {
-        current: "A",
-        percentage: 89,
-      },
-      attendance: {
-        present: 43,
-        total: 45,
-        percentage: 95.6,
-      },
-      nextClass: "Tomorrow, 09:00 AM",
-      assignments: {
-        pending: 2,
-        upcoming: 3,
-      },
-      syllabus: {
-        completed: [
-          "Differential Equations",
-          "Linear Algebra",
-          "Vector Calculus",
-          "Complex Numbers",
-        ],
-        upcoming: [
-          "Fourier Series",
-          "Laplace Transforms",
-          "Partial Differential Equations",
-        ],
-      },
-      resources: {
-        lectures: 28,
-        notes: 15,
-        assignments: 12,
-      },
-      performance: {
-        quizzes: 85,
-        midterm: 92,
-        assignments: 88,
-      },
-    },
-    {
-      id: "2",
-      code: "PHY302",
-      name: "Quantum Physics",
-      credits: 4,
-      teacher: {
-        name: "Dr. Kavita Reddy",
-        email: "kavita.reddy@srm.edu",
-        office: "Block B, Room 412",
-        avatar: "KR",
-      },
-      schedule: {
-        days: ["Tue", "Thu"],
-        time: "11:00 AM - 01:00 PM",
-        room: "Room 305",
-      },
-      progress: {
-        completed: 24,
-        total: 40,
-        percentage: 60,
-      },
-      grade: {
-        current: "A",
-        percentage: 91,
-      },
-      attendance: {
-        present: 38,
-        total: 40,
-        percentage: 95.0,
-      },
-      nextClass: "Nov 1, 11:00 AM",
-      assignments: {
-        pending: 1,
-        upcoming: 2,
-      },
-      syllabus: {
-        completed: [
-          "Wave-Particle Duality",
-          "Schrödinger Equation",
-          "Quantum Mechanics Basics",
-        ],
-        upcoming: [
-          "Quantum Entanglement",
-          "Heisenberg Principle",
-          "Quantum Computing Intro",
-        ],
-      },
-      resources: {
-        lectures: 24,
-        notes: 18,
-        assignments: 10,
-      },
-      performance: {
-        quizzes: 88,
-        midterm: 94,
-        assignments: 91,
-      },
-    },
-    {
-      id: "3",
-      code: "CHEM301",
-      name: "Organic Chemistry",
-      credits: 3,
-      teacher: {
-        name: "Prof. Suresh Mehta",
-        email: "suresh.mehta@srm.edu",
-        office: "Block C, Room 201",
-        avatar: "SM",
-      },
-      schedule: {
-        days: ["Mon", "Wed"],
-        time: "02:00 PM - 03:30 PM",
-        room: "Lab 102",
-      },
-      progress: {
-        completed: 22,
-        total: 38,
-        percentage: 58,
-      },
-      grade: {
-        current: "A-",
-        percentage: 86,
-      },
-      attendance: {
-        present: 35,
-        total: 38,
-        percentage: 92.1,
-      },
-      nextClass: "Today, 02:00 PM",
-      assignments: {
-        pending: 3,
-        upcoming: 1,
-      },
-      syllabus: {
-        completed: [
-          "Hydrocarbons",
-          "Functional Groups",
-          "Reaction Mechanisms",
-        ],
-        upcoming: [
-          "Stereochemistry",
-          "Aromatics",
-          "Polymers",
-        ],
-      },
-      resources: {
-        lectures: 22,
-        notes: 12,
-        assignments: 15,
-      },
-      performance: {
-        quizzes: 82,
-        midterm: 88,
-        assignments: 87,
-      },
-    },
-    {
-      id: "4",
-      code: "ENG201",
-      name: "English Literature",
-      credits: 3,
-      teacher: {
-        name: "Dr. Ananya Singh",
-        email: "ananya.singh@srm.edu",
-        office: "Block D, Room 108",
-        avatar: "AS",
-      },
-      schedule: {
-        days: ["Tue", "Thu"],
-        time: "09:00 AM - 10:30 AM",
-        room: "Room 105",
-      },
-      progress: {
-        completed: 26,
-        total: 42,
-        percentage: 62,
-      },
-      grade: {
-        current: "A",
-        percentage: 90,
-      },
-      attendance: {
-        present: 40,
-        total: 42,
-        percentage: 95.2,
-      },
-      nextClass: "Nov 1, 09:00 AM",
-      assignments: {
-        pending: 1,
-        upcoming: 2,
-      },
-      syllabus: {
-        completed: [
-          "Shakespeare's Plays",
-          "Romantic Poetry",
-          "Victorian Literature",
-        ],
-        upcoming: [
-          "Modern Drama",
-          "Contemporary Fiction",
-          "Literary Criticism",
-        ],
-      },
-      resources: {
-        lectures: 26,
-        notes: 20,
-        assignments: 8,
-      },
-      performance: {
-        quizzes: 87,
-        midterm: 92,
-        assignments: 91,
-      },
-    },
-    {
-      id: "5",
-      code: "CS401",
-      name: "Data Structures & Algorithms",
-      credits: 4,
-      teacher: {
-        name: "Dr. Amit Patel",
-        email: "amit.patel@srm.edu",
-        office: "Block E, Room 501",
-        avatar: "AP",
-      },
-      schedule: {
-        days: ["Mon", "Wed", "Fri"],
-        time: "11:00 AM - 12:30 PM",
-        room: "Lab 401",
-      },
-      progress: {
-        completed: 30,
-        total: 48,
-        percentage: 63,
-      },
-      grade: {
-        current: "A+",
-        percentage: 94,
-      },
-      attendance: {
-        present: 46,
-        total: 48,
-        percentage: 95.8,
-      },
-      nextClass: "Tomorrow, 11:00 AM",
-      assignments: {
-        pending: 2,
-        upcoming: 4,
-      },
-      syllabus: {
-        completed: [
-          "Arrays & Strings",
-          "Linked Lists",
-          "Stacks & Queues",
-          "Trees & Graphs",
-        ],
-        upcoming: [
-          "Dynamic Programming",
-          "Greedy Algorithms",
-          "Advanced Graph Algorithms",
-        ],
-      },
-      resources: {
-        lectures: 30,
-        notes: 25,
-        assignments: 18,
-      },
-      performance: {
-        quizzes: 92,
-        midterm: 96,
-        assignments: 94,
-      },
-    },
-    {
-      id: "6",
-      code: "BIO301",
-      name: "Molecular Biology",
-      credits: 3,
-      teacher: {
-        name: "Dr. Meera Joshi",
-        email: "meera.joshi@srm.edu",
-        office: "Block F, Room 203",
-        avatar: "MJ",
-      },
-      schedule: {
-        days: ["Tue", "Fri"],
-        time: "03:00 PM - 05:00 PM",
-        room: "Lab 201",
-      },
-      progress: {
-        completed: 20,
-        total: 36,
-        percentage: 56,
-      },
-      grade: {
-        current: "A",
-        percentage: 89,
-      },
-      attendance: {
-        present: 34,
-        total: 36,
-        percentage: 94.4,
-      },
-      nextClass: "Tomorrow, 03:00 PM",
-      assignments: {
-        pending: 1,
-        upcoming: 3,
-      },
-      syllabus: {
-        completed: [
-          "DNA Structure",
-          "RNA & Transcription",
-          "Protein Synthesis",
-        ],
-        upcoming: [
-          "Gene Expression",
-          "Genetic Engineering",
-          "Biotechnology Applications",
-        ],
-      },
-      resources: {
-        lectures: 20,
-        notes: 14,
-        assignments: 9,
-      },
-      performance: {
-        quizzes: 86,
-        midterm: 90,
-        assignments: 90,
-      },
-    },
-  ];
+  // Set first course as default when courses load
+  useEffect(() => {
+    if (courses.length > 0 && !selectedCourseId) {
+      setSelectedCourseId(courses[0].course.id);
+    }
+  }, [courses, selectedCourseId]);
+
+  // Get selected course details
+  const selectedCourse = courses.find((c) => c.course.id === selectedCourseId);
+  const selectedCourseAttendance = courseAttendance.find(
+    (ca) => ca.id === selectedCourseId
+  );
+  const selectedCourseMaterials = materials.filter(
+    (m) => m.course.id === selectedCourseId
+  );
+
+  // Filter grades by matching course code (since grades DTO has course code, not ID)
+  const selectedCourseGrades = grades.filter((g) => {
+    if (!g.course || !selectedCourse) return false;
+    return g.course.code === selectedCourse.course.code;
+  });
+
+  // Calculate average grade for selected course
+  const averageGrade =
+    selectedCourseGrades.length > 0
+      ? selectedCourseGrades.reduce(
+          (acc, g) => acc + (g.score / g.assessment.maxScore) * 100,
+          0
+        ) / selectedCourseGrades.length
+      : 0;
+
+  const totalCredits = courses.reduce((acc, c) => acc + c.course.credits, 0);
 
   return (
-    <div className="h-full bg-black flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="px-6 py-5 border-b border-neutral-800/50 shrink-0">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-light text-white tracking-tight">
-              <BookOpen className="inline-block w-6 h-6 mr-2 text-amber-200" />
-              My <span className="font-medium text-amber-200">Courses</span>
-            </h1>
-            <p className="text-neutral-500 text-xs mt-1">
-              {courses.length} courses enrolled • {courses.reduce((acc, c) => acc + c.credits, 0)} total credits
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-neutral-500 text-xs">Overall GPA</p>
-              <p className="text-amber-200 text-xl font-semibold">8.85</p>
+    <div className="h-full bg-black flex flex-col overflow-hidden text-[90%]">
+      {/* Enhanced Hero Header */}
+      <div className="relative px-6 py-6 border-b border-neutral-800/50 shrink-0 bg-gradient-to-br from-amber-200/5 via-black to-black">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-200/5 rounded-full blur-3xl" />
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="relative z-10"
+        >
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-amber-200/20 rounded-2xl">
+                  <BookOpen className="w-6 h-6 text-amber-200" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-white tracking-tight">
+                    My <span className="text-amber-200">Courses</span>
+                  </h1>
+                  <p className="text-neutral-400 text-sm mt-1">
+                    {courses.length} courses enrolled • {totalCredits} total
+                    credits •{" "}
+                    {new Date().toLocaleDateString("en-US", {
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="text-neutral-500 text-xs">Avg Attendance</p>
-              <p className="text-amber-200 text-xl font-semibold">94.5%</p>
+
+            {/* Quick Stats */}
+            <div className="flex gap-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Card className="px-5 py-3 bg-gradient-to-br from-amber-200/10 to-amber-200/5 border-amber-200/30 backdrop-blur">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-amber-200/20 rounded-xl">
+                      <GraduationCap className="w-4 h-4 text-amber-200" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-neutral-400 mb-0.5">
+                        Overall GPA
+                      </p>
+                      <p className="text-xl font-bold text-amber-200">
+                        {(gpa || 0).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Card className="px-5 py-3 bg-gradient-to-br from-green-400/10 to-green-400/5 border-green-400/30 backdrop-blur">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-400/20 rounded-xl">
+                      <TrendingUp className="w-4 h-4 text-green-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-neutral-400 mb-0.5">
+                        Attendance
+                      </p>
+                      <p className="text-xl font-bold text-green-400">
+                        {attendanceStats
+                          ? `${attendanceStats.percentage.toFixed(0)}%`
+                          : "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                <Card className="px-5 py-3 bg-gradient-to-br from-blue-400/10 to-blue-400/5 border-blue-400/30 backdrop-blur">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-400/20 rounded-xl">
+                      <Award className="w-4 h-4 text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-neutral-400 mb-0.5">
+                        Assessments
+                      </p>
+                      <p className="text-xl font-bold text-blue-400">
+                        {grades.length}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden gap-6 p-6">
-        {/* Left Column - Courses List */}
-        <div className="w-[400px] flex flex-col">
-          <Card className="flex-1 bg-neutral-950/50 border-neutral-800/50 overflow-hidden">
-            <ScrollArea className="h-full">
-              <div className="p-5 space-y-3">
-                {courses.map((course, idx) => (
-                  <motion.div
-                    key={course.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                  >
-                    <Card
-                      onClick={() => setSelectedCourse(course)}
-                      className={`p-5 cursor-pointer transition-all ${
-                        selectedCourse?.id === course.id
-                          ? "bg-amber-200/10 border-amber-200/50 shadow-lg shadow-amber-200/10"
-                          : "bg-black/40 border-neutral-800/50 hover:border-amber-200/30"
-                      }`}
-                    >
-                      {/* Course Header */}
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge className="bg-amber-200/20 text-amber-200 text-xs border-amber-200/30">
-                              {course.code}
-                            </Badge>
-                            <Badge className="bg-neutral-800/50 text-neutral-400 text-xs border-neutral-700">
-                              {course.credits} Credits
-                            </Badge>
-                          </div>
-                          <h3 className="text-white font-semibold text-sm mb-1">
-                            {course.name}
-                          </h3>
-                          <p className="text-neutral-500 text-xs flex items-center gap-1">
-                            <User className="w-3 h-3" />
-                            {course.teacher.name}
-                          </p>
-                        </div>
-                        <Badge
-                          className={`text-xs font-semibold ${
-                            course.grade.percentage >= 90
-                              ? "bg-green-500/20 text-green-400 border-green-500/30"
-                              : course.grade.percentage >= 80
-                              ? "bg-amber-200/20 text-amber-200 border-amber-200/30"
-                              : "bg-red-500/20 text-red-400 border-red-500/30"
+      <div className="flex-1 p-4 overflow-hidden">
+        <div className="grid grid-cols-12 gap-4 h-full">
+          {/* Left Sidebar - Courses List */}
+          <div className="col-span-4 flex flex-col h-[calc(100vh-280px)]">
+            <Card className="flex-1 bg-neutral-950/80 border-neutral-800/50 flex flex-col h-full overflow-y-auto">
+              <div className="p-4 border-b border-neutral-800/50 shrink-0">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-semibold text-white flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-amber-200" />
+                    Active Courses
+                  </h2>
+                  <Badge className="bg-amber-200/20 text-amber-200 border-amber-200/30">
+                    {courses.length}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="flex-1">
+                <div className="p-3 space-y-2.5">
+                  {courses.map((enrollment, idx) => {
+                    const courseAtt = courseAttendance.find(
+                      (ca) => ca.id === enrollment.course.id
+                    );
+                    const isSelected =
+                      selectedCourseId === enrollment.course.id;
+
+                    return (
+                      <motion.div
+                        key={enrollment.course.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                      >
+                        <Card
+                          onClick={() =>
+                            setSelectedCourseId(enrollment.course.id)
+                          }
+                          className={`p-4 cursor-pointer transition-all group ${
+                            isSelected
+                              ? "bg-gradient-to-br from-amber-200/15 to-amber-200/5 border-amber-200/50 shadow-lg shadow-amber-200/10"
+                              : "bg-neutral-900/50 border-neutral-800/50 hover:border-amber-200/30 hover:bg-neutral-900/80"
                           }`}
                         >
-                          {course.grade.current}
-                        </Badge>
-                      </div>
+                          {/* Course Header */}
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge
+                                  className={`text-xs font-semibold ${
+                                    isSelected
+                                      ? "bg-amber-200/30 text-amber-200 border-amber-200/50"
+                                      : "bg-amber-200/20 text-amber-200 border-amber-200/30"
+                                  }`}
+                                >
+                                  {enrollment.course.code}
+                                </Badge>
+                                <Badge className="bg-neutral-800/80 text-neutral-300 text-xs border-neutral-700">
+                                  {enrollment.course.credits} CR
+                                </Badge>
+                              </div>
+                              <h3
+                                className={`font-semibold text-sm mb-1 transition-colors ${
+                                  isSelected
+                                    ? "text-amber-200"
+                                    : "text-white group-hover:text-amber-200"
+                                }`}
+                              >
+                                {enrollment.course.name}
+                              </h3>
+                              <p className="text-neutral-500 text-xs">
+                                {enrollment.course.semester}
+                              </p>
+                            </div>
+                            <Badge
+                              className={`text-xs capitalize shrink-0 ${
+                                enrollment.status === "active"
+                                  ? "bg-green-500/20 text-green-400 border-green-500/30"
+                                  : "bg-neutral-800/50 text-neutral-400 border-neutral-700"
+                              }`}
+                            >
+                              {enrollment.status}
+                            </Badge>
+                          </div>
 
-                      {/* Progress Bar */}
-                      <div className="mb-3">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs text-neutral-500">Progress</span>
-                          <span className="text-xs text-amber-200 font-medium">
-                            {course.progress.percentage}%
-                          </span>
+                          {/* Quick Stats */}
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="flex items-center gap-1.5 text-xs">
+                              <FileText className="w-3.5 h-3.5 text-neutral-500" />
+                              <span className="text-neutral-400">
+                                {
+                                  materials.filter(
+                                    (m) => m.course.id === enrollment.course.id
+                                  ).length
+                                }
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs">
+                              <Award className="w-3.5 h-3.5 text-neutral-500" />
+                              <span className="text-neutral-400">
+                                {
+                                  grades.filter(
+                                    (g) =>
+                                      g.course &&
+                                      g.course.code === enrollment.course.code
+                                  ).length
+                                }
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs ml-auto">
+                              <Clock className="w-3.5 h-3.5 text-neutral-500" />
+                              <span className="text-neutral-400">
+                                {new Date(
+                                  enrollment.enrollmentDate
+                                ).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Attendance Progress */}
+                          {courseAtt && (
+                            <div className="pt-3 border-t border-neutral-800/50">
+                              <div className="flex items-center justify-between text-xs mb-2">
+                                <span className="text-neutral-400">
+                                  Attendance
+                                </span>
+                                <span
+                                  className={`font-bold ${
+                                    courseAtt.percentage >= 75
+                                      ? "text-green-400"
+                                      : courseAtt.percentage >= 60
+                                      ? "text-amber-400"
+                                      : "text-red-400"
+                                  }`}
+                                >
+                                  {courseAtt.percentage.toFixed(0)}%
+                                </span>
+                              </div>
+                              <div className="h-2 bg-neutral-800 rounded-full overflow-hidden">
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{
+                                    width: `${courseAtt.percentage}%`,
+                                  }}
+                                  transition={{
+                                    duration: 0.8,
+                                    delay: idx * 0.1,
+                                  }}
+                                  className={`h-full rounded-full ${
+                                    courseAtt.percentage >= 75
+                                      ? "bg-gradient-to-r from-green-400 to-green-500"
+                                      : courseAtt.percentage >= 60
+                                      ? "bg-gradient-to-r from-amber-400 to-amber-500"
+                                      : "bg-gradient-to-r from-red-400 to-red-500"
+                                  }`}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Right Content - Course Details */}
+          <div className="col-span-8 flex flex-col h-[calc(100vh-280px)]">
+            <AnimatePresence mode="wait">
+              {selectedCourse ? (
+                <motion.div
+                  key={selectedCourse.course.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex-1 flex flex-col h-full"
+                >
+                  <Card className="flex-1 bg-neutral-950/80 border-neutral-800/50 flex flex-col h-full overflow-y-auto">
+                    {/* Course Header - Now scrolls with content */}
+                    <div className="px-8 py-6 border-b border-neutral-800/50 bg-gradient-to-br from-amber-200/10 via-transparent to-transparent">
+                      <div className="w-64 h-64 bg-amber-200/5 rounded-full blur-3xl absolute top-0 right-0" />
+                      <div className="relative z-10">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-3">
+                              <Badge className="bg-amber-200/20 text-amber-200 border-amber-200/30 font-semibold">
+                                {selectedCourse.course.code}
+                              </Badge>
+                              <Badge className="bg-neutral-800/50 text-neutral-300 border-neutral-700">
+                                {selectedCourse.course.credits} Credits
+                              </Badge>
+                              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                                {selectedCourse.course.semester}
+                              </Badge>
+                              <Badge
+                                className={`capitalize ${
+                                  selectedCourse.status === "active"
+                                    ? "bg-green-500/20 text-green-400 border-green-500/30"
+                                    : "bg-neutral-800/50 text-neutral-400 border-neutral-700"
+                                }`}
+                              >
+                                {selectedCourse.status}
+                              </Badge>
+                            </div>
+                            <h2 className="text-3xl font-bold text-white mb-2">
+                              {selectedCourse.course.name}
+                            </h2>
+                            {selectedCourse.course.description && (
+                              <p className="text-sm text-neutral-400 leading-relaxed max-w-3xl">
+                                {selectedCourse.course.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className="p-4 bg-gradient-to-br from-amber-200/10 to-transparent border border-amber-200/20 rounded-2xl">
+                            <Sparkles className="w-8 h-8 text-amber-200" />
+                          </div>
                         </div>
-                        <div className="h-1.5 bg-neutral-800/50 rounded-full overflow-hidden">
+
+                        {/* Quick Metrics Row */}
+                        <div className="grid grid-cols-4 gap-3">
+                          <Card className="p-4 bg-gradient-to-br from-amber-200/10 to-transparent border-amber-200/20">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-amber-200/20 rounded-lg">
+                                <Target className="w-4 h-4 text-amber-200" />
+                              </div>
+                              <div>
+                                <p className="text-xs text-neutral-400">
+                                  Materials
+                                </p>
+                                <p className="text-xl font-bold text-white">
+                                  {selectedCourseMaterials.length}
+                                </p>
+                              </div>
+                            </div>
+                          </Card>
+                          <Card className="p-4 bg-gradient-to-br from-blue-500/10 to-transparent border-blue-500/20">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-blue-500/20 rounded-lg">
+                                <Award className="w-4 h-4 text-blue-400" />
+                              </div>
+                              <div>
+                                <p className="text-xs text-neutral-400">
+                                  Assessments
+                                </p>
+                                <p className="text-xl font-bold text-white">
+                                  {selectedCourseGrades.length}
+                                </p>
+                              </div>
+                            </div>
+                          </Card>
+                          <Card className="p-4 bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-green-500/20 rounded-lg">
+                                <BarChart3 className="w-4 h-4 text-green-400" />
+                              </div>
+                              <div>
+                                <p className="text-xs text-neutral-400">
+                                  Avg Score
+                                </p>
+                                <p className="text-xl font-bold text-green-400">
+                                  {averageGrade > 0
+                                    ? `${averageGrade.toFixed(0)}%`
+                                    : "N/A"}
+                                </p>
+                              </div>
+                            </div>
+                          </Card>
+                          <Card className="p-4 bg-gradient-to-br from-amber-500/10 to-transparent border-amber-500/20">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-amber-500/20 rounded-lg">
+                                <CheckCircle className="w-4 h-4 text-amber-400" />
+                              </div>
+                              <div>
+                                <p className="text-xs text-neutral-400">
+                                  Attendance
+                                </p>
+                                <p
+                                  className={`text-xl font-bold ${
+                                    selectedCourseAttendance
+                                      ? selectedCourseAttendance.percentage >=
+                                        75
+                                        ? "text-green-400"
+                                        : "text-red-400"
+                                      : "text-neutral-500"
+                                  }`}
+                                >
+                                  {selectedCourseAttendance
+                                    ? `${selectedCourseAttendance.percentage.toFixed(
+                                        0
+                                      )}%`
+                                    : "N/A"}
+                                </p>
+                              </div>
+                            </div>
+                          </Card>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Content - scrolls with header since Card has overflow-y-auto */}
+                    <div className="p-6 space-y-6">
+                      {/* Attendance Visualization */}
+                        {selectedCourseAttendance && (
                           <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${course.progress.percentage}%` }}
-                            transition={{ duration: 1, delay: idx * 0.1 }}
-                            className="h-full bg-amber-200 rounded-full"
-                          />
-                        </div>
-                      </div>
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                          >
+                            <Card className="p-6 bg-gradient-to-br from-neutral-900/80 to-neutral-950/50 border-neutral-800/50">
+                              <div className="flex items-center justify-between mb-5">
+                                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                                  <Calendar className="w-5 h-5 text-green-400" />
+                                  Attendance Overview
+                                </h3>
+                                <Badge
+                                  className={`${
+                                    selectedCourseAttendance.status === "good"
+                                      ? "bg-green-500/20 text-green-400 border-green-500/30"
+                                      : selectedCourseAttendance.status ===
+                                        "warning"
+                                      ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                                      : "bg-red-500/20 text-red-400 border-red-500/30"
+                                  }`}
+                                >
+                                  {selectedCourseAttendance.status === "good"
+                                    ? "Excellent"
+                                    : selectedCourseAttendance.status ===
+                                      "warning"
+                                    ? "At Risk"
+                                    : "Critical"}
+                                </Badge>
+                              </div>
 
-                      {/* Quick Stats */}
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
-                          <span className="text-neutral-500">
-                            Attendance: <span className="text-white font-medium">{course.attendance.percentage}%</span>
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <FileText className="w-3.5 h-3.5 text-amber-200" />
-                          <span className="text-neutral-500">
-                            Pending: <span className="text-white font-medium">{course.assignments.pending}</span>
-                          </span>
-                        </div>
-                      </div>
+                              <div className="grid grid-cols-3 gap-4 mb-6">
+                                <div className="p-4 bg-black/40 rounded-xl border border-neutral-800/50">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <div className="p-2 bg-green-500/20 rounded-lg">
+                                      <CheckCircle className="w-4 h-4 text-green-400" />
+                                    </div>
+                                    <p className="text-sm text-neutral-400">
+                                      Classes Attended
+                                    </p>
+                                  </div>
+                                  <p className="text-3xl font-bold text-green-400">
+                                    {selectedCourseAttendance.attended}
+                                  </p>
+                                </div>
+                                <div className="p-4 bg-black/40 rounded-xl border border-neutral-800/50">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <div className="p-2 bg-blue-500/20 rounded-lg">
+                                      <Calendar className="w-4 h-4 text-blue-400" />
+                                    </div>
+                                    <p className="text-sm text-neutral-400">
+                                      Total Classes
+                                    </p>
+                                  </div>
+                                  <p className="text-3xl font-bold text-white">
+                                    {selectedCourseAttendance.totalClasses}
+                                  </p>
+                                </div>
+                                <div className="p-4 bg-black/40 rounded-xl border border-neutral-800/50">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <div className="p-2 bg-amber-500/20 rounded-lg">
+                                      <TrendingUp className="w-4 h-4 text-amber-400" />
+                                    </div>
+                                    <p className="text-sm text-neutral-400">
+                                      Percentage
+                                    </p>
+                                  </div>
+                                  <p
+                                    className={`text-3xl font-bold ${
+                                      selectedCourseAttendance.percentage >= 75
+                                        ? "text-green-400"
+                                        : "text-red-400"
+                                    }`}
+                                  >
+                                    {selectedCourseAttendance.percentage.toFixed(
+                                      1
+                                    )}
+                                    %
+                                  </p>
+                                </div>
+                              </div>
 
-                      {/* Next Class */}
-                      <div className="mt-3 pt-3 border-t border-neutral-800/50">
-                        <div className="flex items-center gap-2 text-xs text-neutral-500">
-                          <Clock className="w-3.5 h-3.5" />
-                          Next class: <span className="text-amber-200 font-medium">{course.nextClass}</span>
-                        </div>
+                              {/* Progress Bar */}
+                              <div>
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-sm text-neutral-400">
+                                    Progress to 75% minimum
+                                  </span>
+                                  <span className="text-sm font-semibold text-white">
+                                    {selectedCourseAttendance.percentage >= 75
+                                      ? "✓ Goal Achieved"
+                                      : `${(
+                                          75 -
+                                          selectedCourseAttendance.percentage
+                                        ).toFixed(1)}% more needed`}
+                                  </span>
+                                </div>
+                                <div className="h-3 bg-neutral-800 rounded-full overflow-hidden relative">
+                                  <div
+                                    className={`h-full rounded-full transition-all ${
+                                      selectedCourseAttendance.percentage >= 75
+                                        ? "bg-gradient-to-r from-green-400 to-green-500"
+                                        : "bg-gradient-to-r from-amber-400 to-red-400"
+                                    }`}
+                                    style={{
+                                      width: `${Math.min(
+                                        selectedCourseAttendance.percentage,
+                                        100
+                                      )}%`,
+                                    }}
+                                  />
+                                  {/* 75% marker */}
+                                  <div
+                                    className="absolute top-0 h-full w-0.5 bg-white/30"
+                                    style={{ left: "75%" }}
+                                  />
+                                </div>
+                              </div>
+                            </Card>
+                          </motion.div>
+                        )}
+
+                        {/* Grades & Assessments */}
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.3 }}
+                        >
+                          <Card className="p-6 bg-gradient-to-br from-neutral-900/80 to-neutral-950/50 border-neutral-800/50">
+                            <div className="flex items-center justify-between mb-5">
+                              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                                <GraduationCap className="w-5 h-5 text-purple-400" />
+                                Grades & Assessments
+                              </h3>
+                              <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                                {selectedCourseGrades.length} graded
+                              </Badge>
+                            </div>
+
+                            {selectedCourseGrades.length > 0 ? (
+                              <div className="space-y-3">
+                                {selectedCourseGrades.map((grade, idx) => (
+                                  <motion.div
+                                    key={grade.id}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.4 + idx * 0.05 }}
+                                  >
+                                    <Card className="p-5 bg-black/40 border-neutral-800/50 hover:border-purple-400/30 transition-all group">
+                                      <div className="flex items-start justify-between gap-4">
+                                        <div className="flex-1">
+                                          <div className="flex items-center gap-3 mb-3">
+                                            <div className="p-2 bg-purple-500/20 rounded-lg group-hover:bg-purple-500/30 transition-colors">
+                                              <Award className="w-4 h-4 text-purple-400" />
+                                            </div>
+                                            <div className="flex-1">
+                                              <h4 className="text-white font-semibold text-base group-hover:text-purple-300 transition-colors">
+                                                {grade.assessment.title}
+                                              </h4>
+                                              <p className="text-neutral-500 text-xs mt-0.5">
+                                                {new Date(
+                                                  grade.createdAt
+                                                ).toLocaleDateString("en-US", {
+                                                  month: "long",
+                                                  day: "numeric",
+                                                  year: "numeric",
+                                                })}
+                                              </p>
+                                            </div>
+                                          </div>
+
+                                          <div className="flex items-center gap-4 flex-wrap">
+                                            <Badge className="bg-neutral-800/80 text-neutral-300 border-neutral-700 capitalize">
+                                              {grade.assessment.type}
+                                            </Badge>
+                                            <div className="flex items-center gap-2 text-sm">
+                                              <span className="text-neutral-400">
+                                                Score:
+                                              </span>
+                                              <span className="text-white font-semibold">
+                                                {grade.score}
+                                              </span>
+                                              <span className="text-neutral-600">
+                                                /
+                                              </span>
+                                              <span className="text-neutral-400">
+                                                {grade.assessment.maxScore}
+                                              </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-sm">
+                                              <span className="text-neutral-400">
+                                                Percentage:
+                                              </span>
+                                              <span className="text-amber-200 font-semibold">
+                                                {(
+                                                  (grade.score /
+                                                    grade.assessment.maxScore) *
+                                                  100
+                                                ).toFixed(1)}
+                                                %
+                                              </span>
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        <div className="text-right">
+                                          <div className="text-4xl font-bold text-amber-200 mb-1">
+                                            {grade.grade}
+                                          </div>
+                                          <Badge className="bg-amber-200/20 text-amber-200 border-amber-200/30">
+                                            Grade
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                    </Card>
+                                  </motion.div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-center py-12">
+                                <div className="p-4 bg-neutral-900/50 rounded-2xl inline-block mb-4">
+                                  <GraduationCap className="w-16 h-16 text-neutral-700 mx-auto" />
+                                </div>
+                                <p className="text-neutral-400 text-lg mb-2">
+                                  No Grades Yet
+                                </p>
+                                <p className="text-neutral-600 text-sm">
+                                  Assessments will appear here once graded
+                                </p>
+                              </div>
+                            )}
+                          </Card>
+                        </motion.div>
+
+                        {/* Course Materials */}
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.4 }}
+                        >
+                          <Card className="p-6 bg-gradient-to-br from-neutral-900/80 to-neutral-950/50 border-neutral-800/50">
+                            <div className="flex items-center justify-between mb-5">
+                              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                                <FileText className="w-5 h-5 text-blue-400" />
+                                Study Materials
+                              </h3>
+                              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                                {selectedCourseMaterials.length} files
+                              </Badge>
+                            </div>
+
+                            {selectedCourseMaterials.length > 0 ? (
+                              <div className="grid grid-cols-2 gap-4">
+                                {selectedCourseMaterials.map(
+                                  (material, idx) => (
+                                    <motion.div
+                                      key={material.id}
+                                      initial={{ opacity: 0, scale: 0.95 }}
+                                      animate={{ opacity: 1, scale: 1 }}
+                                      transition={{ delay: 0.5 + idx * 0.05 }}
+                                    >
+                                      <Card
+                                        className="p-5 bg-black/40 border-neutral-800/50 hover:border-blue-400/40 transition-all cursor-pointer group"
+                                        onClick={() =>
+                                          window.open(
+                                            material.fileUrl,
+                                            "_blank"
+                                          )
+                                        }
+                                      >
+                                        <div className="flex items-start gap-4 mb-4">
+                                          <div className="p-3 bg-blue-500/20 rounded-xl group-hover:bg-blue-500/30 transition-colors shrink-0">
+                                            <FileText className="w-5 h-5 text-blue-400" />
+                                          </div>
+                                          <div className="flex-1 min-w-0">
+                                            <h4 className="text-white font-semibold text-sm mb-1 truncate group-hover:text-blue-300 transition-colors">
+                                              {material.title}
+                                            </h4>
+                                            <p className="text-neutral-500 text-xs truncate">
+                                              {material.fileName}
+                                            </p>
+                                          </div>
+                                          <ExternalLink className="w-4 h-4 text-neutral-600 group-hover:text-blue-400 transition-colors shrink-0" />
+                                        </div>
+
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-2">
+                                            <Badge className="bg-amber-200/20 text-amber-200 border-amber-200/30 capitalize text-xs">
+                                              {material.type}
+                                            </Badge>
+                                            <span className="text-neutral-600 text-xs">
+                                              {(
+                                                material.fileSize / 1024
+                                              ).toFixed(0)}{" "}
+                                              KB
+                                            </span>
+                                          </div>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-7 px-2 text-neutral-400 hover:text-blue-400 hover:bg-blue-500/10"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              window.open(
+                                                material.fileUrl,
+                                                "_blank"
+                                              );
+                                            }}
+                                          >
+                                            <Download className="w-3.5 h-3.5" />
+                                          </Button>
+                                        </div>
+
+                                        <div className="mt-3 pt-3 border-t border-neutral-800/50">
+                                          <p className="text-xs text-neutral-500">
+                                            Uploaded{" "}
+                                            {new Date(
+                                              material.uploadedAt
+                                            ).toLocaleDateString("en-US", {
+                                              month: "short",
+                                              day: "numeric",
+                                              year: "numeric",
+                                            })}
+                                          </p>
+                                        </div>
+                                      </Card>
+                                    </motion.div>
+                                  )
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-center py-12">
+                                <div className="p-4 bg-neutral-900/50 rounded-2xl inline-block mb-4">
+                                  <FileText className="w-16 h-16 text-neutral-700 mx-auto" />
+                                </div>
+                                <p className="text-neutral-400 text-lg mb-2">
+                                  No Materials Yet
+                                </p>
+                                <p className="text-neutral-600 text-sm">
+                                  Study materials will appear here when uploaded
+                                </p>
+                              </div>
+                            )}
+                          </Card>
+                        </motion.div>
                       </div>
                     </Card>
-                  </motion.div>
-                ))}
-              </div>
-            </ScrollArea>
-          </Card>
-        </div>
-
-        {/* Right Column - Course Details */}
-        <div className="flex-1 flex flex-col">
-          <AnimatePresence mode="wait">
-            {selectedCourse ? (
-              <motion.div
-                key={selectedCourse.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex-1 flex flex-col"
-              >
-                <Card className="flex-1 bg-neutral-950/50 border-neutral-800/50 flex flex-col overflow-hidden">
-                  {/* Course Details Header */}
-                  <div className="px-6 py-5 border-b border-neutral-800/50">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge className="bg-amber-200/20 text-amber-200 border-amber-200/30">
-                            {selectedCourse.code}
-                          </Badge>
-                          <Badge className="bg-neutral-800/50 text-neutral-400 border-neutral-700">
-                            {selectedCourse.credits} Credits
-                          </Badge>
-                        </div>
-                        <h2 className="text-white text-xl font-semibold mb-1">
-                          {selectedCourse.name}
-                        </h2>
-                        <div className="flex items-center gap-4 text-sm text-neutral-500">
-                          <span className="flex items-center gap-1.5">
-                            <Calendar className="w-4 h-4" />
-                            {selectedCourse.schedule.days.join(", ")}
-                          </span>
-                          <span className="flex items-center gap-1.5">
-                            <Clock className="w-4 h-4" />
-                            {selectedCourse.schedule.time}
-                          </span>
-                          <span className="flex items-center gap-1.5">
-                            <MapPin className="w-4 h-4" />
-                            {selectedCourse.schedule.room}
-                          </span>
-                        </div>
-                      </div>
-                      <Badge
-                        className={`text-lg font-bold px-4 py-2 ${
-                          selectedCourse.grade.percentage >= 90
-                            ? "bg-green-500/20 text-green-400 border-green-500/30"
-                            : selectedCourse.grade.percentage >= 80
-                            ? "bg-amber-200/20 text-amber-200 border-amber-200/30"
-                            : "bg-red-500/20 text-red-400 border-red-500/30"
-                        }`}
-                      >
-                        {selectedCourse.grade.current}
-                      </Badge>
+                </motion.div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex-1 flex items-center justify-center"
+                >
+                  <Card className="p-16 bg-neutral-950/50 border-neutral-800/50 text-center">
+                    <div className="p-6 bg-blue-500/10 rounded-3xl inline-block mb-6">
+                      <BookOpen className="w-24 h-24 text-blue-400/50 mx-auto" />
                     </div>
-                  </div>
-
-                  {/* Scrollable Content */}
-                  <ScrollArea className="flex-1">
-                    <div className="p-6 space-y-6">
-                      {/* Performance Insights */}
-                      <div className="grid grid-cols-3 gap-4">
-                        <Card className="p-4 bg-black/40 border-neutral-800/50">
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 rounded-lg bg-amber-200/20 flex items-center justify-center">
-                              <Target className="w-5 h-5 text-amber-200" />
-                            </div>
-                            <div>
-                              <p className="text-xs text-neutral-500">Current Grade</p>
-                              <p className="text-2xl font-bold text-white">{selectedCourse.grade.percentage}%</p>
-                            </div>
-                          </div>
-                        </Card>
-                        <Card className="p-4 bg-black/40 border-neutral-800/50">
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
-                              <CheckCircle2 className="w-5 h-5 text-green-400" />
-                            </div>
-                            <div>
-                              <p className="text-xs text-neutral-500">Attendance</p>
-                              <p className="text-2xl font-bold text-white">{selectedCourse.attendance.percentage}%</p>
-                            </div>
-                          </div>
-                        </Card>
-                        <Card className="p-4 bg-black/40 border-neutral-800/50">
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                              <TrendingUp className="w-5 h-5 text-blue-400" />
-                            </div>
-                            <div>
-                              <p className="text-xs text-neutral-500">Progress</p>
-                              <p className="text-2xl font-bold text-white">{selectedCourse.progress.percentage}%</p>
-                            </div>
-                          </div>
-                        </Card>
-                      </div>
-
-                      {/* Teacher Information */}
-                      <Card className="p-5 bg-black/40 border-neutral-800/50">
-                        <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                          <GraduationCap className="w-5 h-5 text-amber-200" />
-                          Course Instructor
-                        </h3>
-                        <div className="flex items-start gap-4">
-                          <div className="w-16 h-16 rounded-full bg-amber-200/20 flex items-center justify-center shrink-0">
-                            <span className="text-amber-200 font-bold text-xl">
-                              {selectedCourse.teacher.avatar}
-                            </span>
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="text-white font-semibold text-lg mb-2">
-                              {selectedCourse.teacher.name}
-                            </h4>
-                            <div className="space-y-1.5">
-                              <p className="text-sm text-neutral-400 flex items-center gap-2">
-                                <Mail className="w-4 h-4" />
-                                {selectedCourse.teacher.email}
-                              </p>
-                              <p className="text-sm text-neutral-400 flex items-center gap-2">
-                                <MapPin className="w-4 h-4" />
-                                {selectedCourse.teacher.office}
-                              </p>
-                            </div>
-                            <Button className="mt-4 h-9 bg-amber-200 hover:bg-amber-300 text-black text-sm font-medium">
-                              Send Message
-                            </Button>
-                          </div>
-                        </div>
-                      </Card>
-
-                      {/* Performance Breakdown */}
-                      <Card className="p-5 bg-black/40 border-neutral-800/50">
-                        <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                          <BarChart3 className="w-5 h-5 text-amber-200" />
-                          Performance Breakdown
-                        </h3>
-                        <div className="space-y-4">
-                          <div>
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-neutral-400">Quizzes</span>
-                              <span className="text-sm text-white font-semibold">{selectedCourse.performance.quizzes}%</span>
-                            </div>
-                            <div className="h-2 bg-neutral-800/50 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-amber-200 rounded-full"
-                                style={{ width: `${selectedCourse.performance.quizzes}%` }}
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-neutral-400">Midterm Exam</span>
-                              <span className="text-sm text-white font-semibold">{selectedCourse.performance.midterm}%</span>
-                            </div>
-                            <div className="h-2 bg-neutral-800/50 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-green-400 rounded-full"
-                                style={{ width: `${selectedCourse.performance.midterm}%` }}
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-neutral-400">Assignments</span>
-                              <span className="text-sm text-white font-semibold">{selectedCourse.performance.assignments}%</span>
-                            </div>
-                            <div className="h-2 bg-neutral-800/50 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-blue-400 rounded-full"
-                                style={{ width: `${selectedCourse.performance.assignments}%` }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-
-                      <div className="grid grid-cols-2 gap-6">
-                        {/* Syllabus Progress */}
-                        <Card className="p-5 bg-black/40 border-neutral-800/50">
-                          <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                            <Award className="w-5 h-5 text-amber-200" />
-                            Syllabus Progress
-                          </h3>
-                          <div className="space-y-4">
-                            <div>
-                              <p className="text-xs text-neutral-500 mb-2 font-medium">Completed Topics</p>
-                              <div className="space-y-2">
-                                {selectedCourse.syllabus.completed.map((topic, idx) => (
-                                  <div key={idx} className="flex items-center gap-2 text-sm">
-                                    <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
-                                    <span className="text-neutral-400">{topic}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                            <div>
-                              <p className="text-xs text-neutral-500 mb-2 font-medium">Upcoming Topics</p>
-                              <div className="space-y-2">
-                                {selectedCourse.syllabus.upcoming.map((topic, idx) => (
-                                  <div key={idx} className="flex items-center gap-2 text-sm">
-                                    <Circle className="w-4 h-4 text-neutral-600 shrink-0" />
-                                    <span className="text-neutral-500">{topic}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </Card>
-
-                        {/* Course Resources */}
-                        <Card className="p-5 bg-black/40 border-neutral-800/50">
-                          <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                            <FileText className="w-5 h-5 text-amber-200" />
-                            Course Resources
-                          </h3>
-                          <div className="space-y-3">
-                            <Card className="p-4 bg-neutral-900/50 border-neutral-800/50 hover:border-amber-200/30 transition-colors cursor-pointer">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
-                                    <Video className="w-5 h-5 text-red-400" />
-                                  </div>
-                                  <div>
-                                    <p className="text-sm text-white font-medium">Video Lectures</p>
-                                    <p className="text-xs text-neutral-500">Recorded sessions</p>
-                                  </div>
-                                </div>
-                                <Badge className="bg-neutral-800 text-white">
-                                  {selectedCourse.resources.lectures}
-                                </Badge>
-                              </div>
-                            </Card>
-                            <Card className="p-4 bg-neutral-900/50 border-neutral-800/50 hover:border-amber-200/30 transition-colors cursor-pointer">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                                    <FileText className="w-5 h-5 text-blue-400" />
-                                  </div>
-                                  <div>
-                                    <p className="text-sm text-white font-medium">Study Notes</p>
-                                    <p className="text-xs text-neutral-500">PDF documents</p>
-                                  </div>
-                                </div>
-                                <Badge className="bg-neutral-800 text-white">
-                                  {selectedCourse.resources.notes}
-                                </Badge>
-                              </div>
-                            </Card>
-                            <Card className="p-4 bg-neutral-900/50 border-neutral-800/50 hover:border-amber-200/30 transition-colors cursor-pointer">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-lg bg-amber-200/20 flex items-center justify-center">
-                                    <FileText className="w-5 h-5 text-amber-200" />
-                                  </div>
-                                  <div>
-                                    <p className="text-sm text-white font-medium">Assignments</p>
-                                    <p className="text-xs text-neutral-500">Tasks & quizzes</p>
-                                  </div>
-                                </div>
-                                <Badge className="bg-neutral-800 text-white">
-                                  {selectedCourse.resources.assignments}
-                                </Badge>
-                              </div>
-                            </Card>
-                          </div>
-                        </Card>
-                      </div>
-                    </div>
-                  </ScrollArea>
-                </Card>
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex-1 flex items-center justify-center"
-              >
-                <Card className="p-16 bg-neutral-950/50 border-neutral-800/50 text-center">
-                  <BookOpen className="w-20 h-20 text-neutral-700 mx-auto mb-6" />
-                  <p className="text-neutral-400 text-lg mb-2 font-medium">
-                    Select a course to view details
-                  </p>
-                  <p className="text-neutral-600 text-sm">
-                    Choose from the list to see insights and information
-                  </p>
-                </Card>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                    <p className="text-neutral-300 text-2xl mb-3 font-semibold">
+                      Select a Course
+                    </p>
+                    <p className="text-neutral-500 text-sm max-w-md mx-auto">
+                      Choose a course from the sidebar to view detailed
+                      information, grades, materials, and attendance records
+                    </p>
+                  </Card>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </div>
